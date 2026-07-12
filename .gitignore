@@ -1,0 +1,53 @@
+# EIDE 项目构建输出
+/build/
+/bin/
+/obj/
+/out/
+/output/
+/tmp/
+
+# EIDE 用户配置
+/.eide/log/
+/.eide.usr.ctx.json
+.eide-template
+*.ept
+
+# VSCode 用户配置（保留项目配置）
+/.vscode/launch.json
+/.settings/
+
+# 编译生成的文件
+*.o
+*.obj
+*.elf
+*.hex
+*.bin
+*.map
+*.axf
+*.lst
+*.dep
+*.d
+
+# TI 工具链生成文件
+*.out
+*.pp
+*.asm
+
+# 调试文件
+*.log
+*.swp
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 打包文件
+*.zip
+*.tar.gz
+*.rar
+
+# 保留的重要文件（强制添加）
+!Debug/ti_msp_dl_config.c
+!Debug/ti_msp_dl_config.h
