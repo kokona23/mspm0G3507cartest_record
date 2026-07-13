@@ -103,7 +103,7 @@ I2C0.peripheral.sclPin.$assign = "PA1";
 I2C0.sdaPinConfig.enableConfig = true;
 I2C0.sclPinConfig.enableConfig = true;
 
-/* Four UART routes from the supplied pin plan. */
+/* UART3 (PB2/PB3) is reserved for the ATK-BLE02 Bluetooth test connection. */
 const uartConfig = [
     [UART0, "UART0", "PA10", "PA11"],
     [UART1, "UART1", "PA8", "PA9"],
