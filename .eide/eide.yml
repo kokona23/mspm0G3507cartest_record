@@ -4,11 +4,13 @@ type: ARM
 deviceName: MSPM0G3507
 packDir: .pack/TexasInstruments/MSPM0G_DFP.1.2.1
 srcDirs:
-  - ../../MSPM0G3507_IIC_OLED-main/MSPM0G3507_IIC_OLED-main
+  - src
+  - Debug
 virtualFolder:
   name: <virtual_root>
   files:
     - path: RTE_Components.h
+    - path: src/main.c
     - path: ../../../../../../../../ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/m0p/startup_system_files/keil/startup_mspm0g350x_uvision.s
     - path: ../../../../../../../../ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/lib/keil/m0p/mspm0g1x0x_g3x0x/driverlib.a
   folders: []
@@ -23,9 +25,8 @@ targets:
         - __MSPM0G3507__
       incList:
         - .
-        - ../../MSPM0G3507_IIC_OLED-main/MSPM0G3507_IIC_OLED-main
-        - ../../MSPM0G3507_IIC_OLED-main/MSPM0G3507_IIC_OLED-main/oled
-        - ../../MSPM0G3507_IIC_OLED-main/MSPM0G3507_IIC_OLED-main/Debug
+        - inc
+        - Debug
         - ../../../../../../../../ti/mspm0_sdk_2_05_01_00/source
         - ../../../../../../../../ti/mspm0_sdk_2_05_01_00/source/third_party/CMSIS/Core/Include
       libList: []
