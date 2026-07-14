@@ -8,7 +8,7 @@
 > **测试进度**: 
 > - ✅ MSPM0G3507 开发环境搭建完成
 > - ✅ SysConfig 引脚配置完成（PWM、UART、SPI、I2C）
-> - ✅ ICM42688 陀螺仪驱动开发完成
+> - ⏳ ICM42688 SPI1 引脚已预留，底层驱动尚未接入
 > - ✅ EIDE 工程配置和编译环境验证通过
 > - 🔄 电机控制模块开发中
 > - 🔄 循迹传感器接口调试中
@@ -18,7 +18,7 @@
 
 **下一步计划**:
 1. 完成电机 PWM 输出测试，验证 TB6612 驱动电路
-2. 调试 ICM42688 陀螺仪，验证 SPI 通信和数据读取
+2. 编写并接入 ICM42688 底层驱动，验证 SPI 通信和数据读取
 3. 实现编码器脉冲计数和速度计算
 4. 开发基础 PID 控制算法
 5. 循迹传感器数据采集和处理
@@ -37,8 +37,8 @@
   - 编码器 x4 (速度反馈)
   - 循迹传感器模块
 - **通信接口**: 
-  - UART x4 (115200 bps)
-  - SPI x2 (1 MHz)
+  - UART x3 (UART0 / UART1 / UART3，115200 bps)
+  - SPI x1 (SPI1，1 MHz)
   - I2C x1 (100 kHz)
 
 ### 开发环境
@@ -108,8 +108,8 @@ NewProject1/
 │   ├── motor.h
 │   └── line_sensor.h
 ├── modules/                      # 外设驱动模块
-│   └── ICM42688/                # ICM42688 陀螺仪驱动
-│       ├── README.md            # 驱动说明文档
+│   └── ICM42688/                # ICM42688 预留接口 / 草稿
+│       ├── README.md            # 接入状态说明
 │       ├── inc/icm42688.h
 │       └── src/icm42688.c
 ├── Debug/                        # SysConfig 生成文件
@@ -147,13 +147,13 @@ NewProject1/
 | M2 | PA22 (TIMA0_CC1) | PB8 | PA7 |
 | M3 | PA24 (TIMA1_CC1) | PA15 | PB9 |
 | M4 | PA25 (TIMA0_CC3) | PB19 | PB24 |
-| STBY | PA23 | - | - |
+| STBY | 硬件上拉至 3.3V | - | 不占用 MCU GPIO |
 
 ### 编码器
 | 编码器 | A 相 | B 相 |
 |--------|------|------|
 | ENC1 | PA12 | PA13 |
-| ENC2 | PA14 | PA26 |
+| ENC2 | PA2 | PA26 |
 | ENC3 | PA27 | PA28 |
 | ENC4 | PA31 | PB18 |
 
@@ -168,32 +168,9 @@ Ctrl+Shift+P → Tasks: Run Task → sysconfig: open gui
 
 ## 📚 模块说明
 
-### ICM42688 陀螺仪驱动
+### ICM42688 陀螺仪
 
-完整的 ICM42688-P 六轴 IMU 驱动，支持：
-- SPI 通信 (Mode 0, 1 MHz)
-- 加速度计: ±8g @ 1kHz
-- 陀螺仪: ±1000dps @ 1kHz
-- 陀螺仪零偏自动校准
-- 温度读取
-
-**使用示例**:
-```c
-#include "icm42688.h"
-
-// 初始化
-ICM42688_Init();
-
-// 校准陀螺仪（车辆静止状态）
-ICM42688_CalibrateGyro(1000, 2);
-
-// 读取数据
-ICM42688_Data imu;
-ICM42688_Read(&imu);
-float yaw_rate = imu.gyroZDps;  // 转向角速度
-```
-
-详细文档: [modules/ICM42688/README.md](./modules/ICM42688/README.md)
+SPI1、PB20 软件片选和接线已预留，但 ICM42688 底层驱动尚未完成验证，也未加入当前 EIDE 编译目标。现阶段不得在主程序中调用 ICM42688 API。
 
 ## 🐛 调试
 
@@ -211,7 +188,7 @@ UART0 已连接到板载 CH340，波特率 115200。
 ## 📝 开发日志
 
 ### 2026-07-12
-- ✅ 添加 ICM42688 陀螺仪驱动模块
+- ⏳ 预留 ICM42688 SPI1 硬件接口
 - ✅ 更新 SysConfig 配置（ICM42688 软件片选）
 - ✅ 修复 EIDE 工程配置
 - ✅ 添加 VSCode 任务配置
@@ -230,7 +207,7 @@ UART0 已连接到板载 CH340，波特率 115200。
 
 2. **编译前自动生成**: 项目配置了 beforeBuildTasks，每次编译前会自动运行 SysConfig 生成配置文件。
 
-3. **陀螺仪校准**: ICM42688 必须在车辆**完全静止**时校准，建议启动后校准一次。
+3. **陀螺仪接入**: ICM42688 驱动完成并通过硬件验证后，再加入初始化和静态校准流程。
 
 4. **引脚冲突**: 部分引脚已被板载外设占用（如 PB17 接 Flash CS），详见 WIRING_AND_SYSCONFIG.md。
 

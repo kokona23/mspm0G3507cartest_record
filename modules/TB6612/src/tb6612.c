@@ -51,15 +51,13 @@ static void TB6612_SetOne(int16_t speed, bool reversed, GPIO_Regs *in1Port, uint
 
 void TB6612_Init(void)
 {
-    TB6612_SetStandby(false);
     TB6612_Stop();
-    delay_cycles(CPUCLK_FREQ / 1000U);
-    TB6612_SetStandby(true);
 }
 
 void TB6612_SetStandby(bool enabled)
 {
-    TB6612_WritePin(MOTOR_DIR_STBY_PORT, MOTOR_DIR_STBY_PIN, enabled);
+    /* STBY is pulled up to 3.3 V by the motor-driver hardware. */
+    (void)enabled;
 }
 
 void TB6612_SetFour(int16_t m1Speed, int16_t m2Speed, int16_t m3Speed, int16_t m4Speed)

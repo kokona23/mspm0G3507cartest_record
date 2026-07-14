@@ -1,114 +1,84 @@
-# MSPM0G3507 LQFP-48 最终引脚方案
+# MSPM0G3507 LQFP-48 引脚配置说明
 
-本表与 `NewProject1.syscfg` 及 SysConfig 生成的 `Debug/ti_msp_dl_config.h` 一致。SysConfig 1.24 / SDK 2.05 已验证通过。
+本文件以 `NewProject1.syscfg` 和 SysConfig 生成的 `Debug/ti_msp_dl_config.h` 为准，已用 SysConfig 1.24.1 / MSPM0 SDK 2.05 验证生成。
 
-## 通信接口
+配套总览图：[MSPM0G3507_PINOUT_SUMMARY.png](docs/MSPM0G3507_PINOUT_SUMMARY.png)。
 
-| 功能 | GPIO | 核心板位置 | IOMUX / 复用 | 说明 |
+## 配置总览
+
+| 模块 | 当前配置 | 资源 |
+|---|---|---|
+| SPI | SPI1 Controller，1 MHz，Mode 0，8 bit，MOTO3 | PA16 / PA17 / PA18 + PB20 软件 CS；DMA_CH2 / DMA_CH3 |
+| I2C | I2C0 Controller，100 kHz | PA0 / PA1 |
+| UART | UART0、UART1、UART3，均为 115200 | 6 个 GPIO |
+| 电机 | TB6612 四电机 | 4 PWM、8 DIR；STBY 由硬件上拉 |
+| 编码器 | 四路正交编码器 | 8 路 GPIO 双边沿中断 |
+| 调试 | SWD / NRST | PA19 / PA20 / NRST |
+
+SPI0、UART2 未启用：SPI0 的 PA4/PA5/PA6 与核心板时钟网络共用；UART2 的 PB15/PB16 与板载 Flash 网络共用。
+
+## 通信与调试
+
+| 功能 | GPIO | 核心板位置 | PINCM / 复用 | 接线说明 |
 |---|---|---|---|---|
-| SPI0_CS0 | PA2 | H1-6 | PINCM7 / SPI0_CS0 | 仅 CS 在排针 |
-| SPI0_POCI | PA4 | 未引出 | PINCM9 / SPI0_POCI | 板载 32.768 kHz 晶振网络附近 |
-| SPI0_PICO | PA5 | 未引出 | PINCM10 / SPI0_PICO | 已接板载 40 MHz 晶振 |
-| SPI0_SCLK | PA6 | 未引出 | PINCM11 / SPI0_SCLK | 已接板载 40 MHz 晶振 |
-| ICM42688_CS | PB20 | H1-8 | PINCM48 / GPIO 输出 | 软件片选，空闲时保持高电平 |
-| SPI1_POCI / ICM42688_SDO | PA16 | H2-13 | PINCM38 / SPI1_POCI | ICM42688 传感器输出、主控输入 |
-| SPI1_PICO / ICM42688_SDI | PA18 | H2-11 | PINCM40 / SPI1_PICO | ICM42688 主控输出、传感器输入 |
-| SPI1_SCLK / ICM42688_SCLK | PA17 | H2-12 | PINCM39 / SPI1_SCLK | 1 MHz，SPI Mode 0 |
-| I2C0_SDA | PA0 | H1-1 | PINCM1 / I2C0_SDA | 100 kHz，外部需要上拉 |
-| I2C0_SCL | PA1 | H1-2 | PINCM2 / I2C0_SCL | 100 kHz，板上已有上拉配置 |
-| UART0_TX | PA10 | 调试排针 U4 | PINCM21 / UART0_TX | 已接 CH340 |
-| UART0_RX | PA11 | 调试排针 U4 | PINCM22 / UART0_RX | 已接 CH340 |
-| UART1_TX | PA8 | H1-14 | PINCM19 / UART1_TX | 115200 |
-| UART1_RX | PA9 | H1-15 | PINCM20 / UART1_RX | 115200 |
-| UART2_TX | PB15 | 未引出 | PINCM32 / UART2_TX | 已接板载 Flash 数据线 |
-| UART2_RX | PB16 | 未引出 | PINCM33 / UART2_RX | 已接板载 Flash 时钟线 |
-| UART3_TX | PB2 | H1-12 | PINCM15 / UART3_TX | 115200 |
-| UART3_RX | PB3 | H1-13 | PINCM16 / UART3_RX | 115200 |
-
-SPI0 与 UART2 虽已按要求写入 SysConfig，但在现有核心板上不能直接从 H1/H2 扩展。扩展板应优先使用 SPI1、I2C0、UART1 和 UART3。
-
-### ICM42688 接线与片选
-
-单个 ICM42688 使用 SPI1，连接如下：
-
-| ICM42688 引脚 | MSPM0G3507 | 核心板位置 | 说明 |
-|---|---|---|---|
-| VCC | 3.3 V | 3.3 V | 不可接 5 V |
-| GND | GND | GND | 与电机控制板共地 |
-| SCLK | PA17 | H2-12 | SPI1 时钟 |
-| SDI / MOSI | PA18 | H2-11 | SPI1 PICO |
-| SDO / MISO | PA16 | H2-13 | SPI1 POCI |
-| CS | PB20 | H1-8 | 普通 GPIO 软件片选，低电平有效 |
-
-SPI1 在 SysConfig 中设置为 Controller、8 bit、MSB first、Mode 0、1 MHz，并使用不包含外设片选的 `MOTO3` 帧格式。这里的 `MOTO3` 表示 SPI 外设只管理 SCLK/PICO/POCI 三根信号线，完整接线仍是包含软件 CS 的标准四线 SPI。PB20 独立配置为 `ICM42688_CS` GPIO 输出，初始值为高。这样寄存器地址和后续数据可以保持在同一次 CS 低电平事务中，不会与电机、编码器、UART、I2C 或 SWD 引脚冲突。
+| I2C0_SDA | PA0 | H1-1 | PINCM1 / I2C0_SDA | OLED 等 I2C 外设；总线使用 3.3 V 上拉 |
+| I2C0_SCL | PA1 | H1-2 | PINCM2 / I2C0_SCL | OLED 等 I2C 外设 |
+| SPI1_POCI | PA16 | H2-13 | PINCM38 / SPI1_POCI | 为后续 ICM42688 预留的 SDO / MISO |
+| SPI1_SCLK | PA17 | H2-12 | PINCM39 / SPI1_SCLK | 为后续 ICM42688 预留的 SCLK |
+| SPI1_PICO | PA18 | H2-11 | PINCM40 / SPI1_PICO | 为后续 ICM42688 预留的 SDI / MOSI；与板载 KEY 共用，SPI 工作时不得按 KEY |
+| SPI1 软件 CS | PB20 | H1-8 | PINCM48 / GPIO 输出 | 为后续 ICM42688 预留；空闲高、低有效，原理图网络名 `SPI1_CS0` |
+| UART0_TX / RX | PA10 / PA11 | 板载 CH340 | PINCM21 / PINCM22 | 调试串口 |
+| UART1_TX / RX | PA8 / PA9 | H1-14 / H1-15 | PINCM19 / PINCM20 | Servo1 / Servo2 UART 接口 |
+| UART3_TX / RX | PB2 / PB3 | H1-12 / H1-13 | PINCM15 / PINCM16 | RDK / 蓝牙通信接口 |
+| SWDIO / SWCLK | PA19 / PA20 | 调试接口 | DEBUGSS | 保留给下载和调试 |
+| NRST | NRST | H1-5 | 复位功能 | 保留复位按键和测试点 |
 
 ## TB6612 四电机
 
-| 功能 | GPIO | 核心板位置 | IOMUX / 复用 |
+| 功能 | GPIO | 核心板位置 | PINCM / 方式 |
 |---|---|---|---|
-| M1_PWM | PA21 | H2-8 | PINCM46 / TIMA0_CCP0 |
-| M2_PWM | PA22 | H2-7 | PINCM47 / TIMA0_CCP1 |
-| M3_PWM | PA24 | H2-5 | PINCM54 / TIMA1_CCP1 |
-| M4_PWM | PA25 | H2-4 | PINCM55 / TIMA0_CCP3 |
-| M1_IN1 | PB6 | H1-16 | PINCM23 / GPIO |
-| M1_IN2 | PB7 | H1-17 | PINCM24 / GPIO |
-| M2_IN1 | PB8 | H2-10 | PINCM25 / GPIO |
-| M2_IN2 | PA7 | H1-11 | PINCM14 / GPIO |
-| M3_IN1 | PA15 | H2-14 | PINCM37 / GPIO |
-| M3_IN2 | PB9 | H2-9 | PINCM26 / GPIO |
-| M4_IN1 | PB19 | H1-9 | PINCM45 / GPIO |
-| M4_IN2 | PB24 | H1-7 | PINCM52 / GPIO |
-| TB6612_STBY | PA23 | H2-6 | PINCM53 / GPIO |
-
-四路 PWM 均为 32 MHz / 1000 = 32 kHz，初始占空比为 0%。
+| M1_PWM | PA21 | H2-8 | TIMA0_CCP0 / PINCM46 |
+| M2_PWM | PA22 | H2-7 | TIMA0_CCP1 / PINCM47 |
+| M3_PWM | PA24 | H2-5 | TIMA1_CCP1 / PINCM54 |
+| M4_PWM | PA25 | H2-4 | TIMA0_CCP3 / PINCM55 |
+| M1_IN1 / M1_IN2 | PB6 / PB7 | H1-16 / H1-17 | GPIO / PINCM23 / PINCM24 |
+| M2_IN1 / M2_IN2 | PB8 / PA7 | H2-10 / H1-11 | GPIO / PINCM25 / PINCM14 |
+| M3_IN1 / M3_IN2 | PA15 / PB9 | H2-14 / H2-9 | GPIO / PINCM37 / PINCM26 |
+| M4_IN1 / M4_IN2 | PB19 / PB24 | H1-9 / H1-7 | GPIO / PINCM45 / PINCM52 |
+PWM 参数：32 MHz / 1000 = 32 kHz，初始占空比 0%。TB6612 的 STBY 由硬件上拉到 3.3 V，PA23 未在 SysConfig 中启用。
 
 ## 编码器输入
 
-| 功能 | GPIO | 核心板位置 | IOMUX / 方式 |
-|---|---|---|---|
-| ENC1_A | PA12 | H2-17 | PINCM34 / GPIO 双边沿中断 |
-| ENC1_B | PA13 | H2-16 | PINCM35 / GPIO 双边沿中断 |
-| ENC2_A | PA14 | H2-15 | PINCM36 / GPIO 双边沿中断；板载 LED 同脚 |
-| ENC2_B | PA26 | H2-3 | PINCM59 / GPIO 双边沿中断 |
-| ENC3_A | PA27 | H2-2 | PINCM60 / GPIO 双边沿中断 |
-| ENC3_B | PA28 | H1-3 | PINCM3 / GPIO 双边沿中断 |
-| ENC4_A | PA31 | H1-4 | PINCM6 / GPIO 双边沿中断 |
-| ENC4_B | PB18 | H1-10 | PINCM44 / GPIO 双边沿中断 |
+| 编码器 | A 相 | B 相 | 核心板位置 | 方式 |
+|---|---|---|---|---|
+| ENC1 | PA12 | PA13 | H2-17 / H2-16 | GPIO 双边沿中断 |
+| ENC2 | PA2 | PA26 | H1-6 / H2-3 | GPIO 双边沿中断 |
+| ENC3 | PA27 | PA28 | H2-2 / H1-3 | GPIO 双边沿中断 |
+| ENC4 | PA31 | PB18 | H1-4 / H1-10 | GPIO 双边沿中断 |
 
-`ENC4_A` 从原图的 PB17 改到 PA31，因为 PB17 是板载 Flash 的片选脚且未接到 H1/H2。
+`ENC2_A` 已从 PA14 移到 PA2，避开核心板板载 LED。扩展板应将 TB6612 左侧 H1-9 的 `ENC2_A` 连接到 U7/H5-6（PA2）；U8/H6-6 不再连接 `ENC2_A`，可保留为标注为 `PA14_LED_SHARED` 的备用引出脚。
 
-## SPI DMA
+`src/encoder.c` 提供 `GPIOA_IRQHandler` 和 `GPIOB_IRQHandler`：读取双相状态、按四倍频正交码表更新四组计数，并清除对应中断标志。主程序在 `SYSCFG_DL_init()` 后调用 `Encoder_Init()`，建立初始相位并使能两个 GPIO NVIC 中断。
 
-| 方向 | 触发源 | DMA 通道 |
+## 扩展板原理图网络规则
+
+- U7/H5-6：网络名为 `ENC2_A`，对应 PA2。
+- U8/H6-6：不得标为 `ENC2_A`；若保留引出，使用 `PA14_LED_SHARED`，提示该脚连接板载 LED。
+- U7/H5-8：网络名为 `SPI1_CS0`，对应 PB20 软件片选；不可误改为 `SPI1_CS`。
+- U8/H6-10：网络名为 `SPI1_PICO`，对应 PA18；板载 KEY 不使用时可保持当前连接。
+- 所有 MCU 信号均为 3.3 V 逻辑。5 V 只可作电源，不能直接接 MCU GPIO。
+- ICM42688 目前仅保留硬件引脚和 SPI1 配置，尚未接入已验证的底层驱动与应用调用。
+
+## 未启用或不可用的芯片引脚
+
+| 引脚 | 原因 | 处理 |
 |---|---|---|
-| SPI0 RX | DMA_SPI0_RX_TRIG | DMA_CH0 |
-| SPI0 TX | DMA_SPI0_TX_TRIG | DMA_CH1 |
-| SPI1 RX | DMA_SPI1_RX_TRIG | DMA_CH2 |
-| SPI1 TX | DMA_SPI1_TX_TRIG | DMA_CH3 |
+| PA4 / PA5 / PA6 | 核心板晶振网络 | 不启用 SPI0，不接外设 |
+| PB15 / PB16 / PB17 | 板载 Flash 网络 | 不启用 UART2，不接外设 |
+| PA14 | 板载 LED | 不用于编码器；仅作为带 LED 负载的备用引出 |
+| PA18 | 板载 KEY | 保留 SPI1_PICO；SPI 工作时不得按 KEY |
+| PA19 / PA20 | SWD 调试 | 保留，不分配给外设 |
 
-## 调试保留
+## 循迹模块
 
-| 功能 | GPIO | 位置 |
-|---|---|---|
-| SWDIO | PA19 | 调试排针 U4 |
-| SWCLK | PA20 | 调试排针 U4 |
-| NRST | NRST | H1-5 / 复位按键 |
-
-## 相对原图的必要修正
-
-| 原图 | 最终配置 | 原因 |
-|---|---|---|
-| M3_IN2 = PB11 | PB9 | PB11 不存在于 LQFP-48 |
-| M4_IN1 = PB12 | PB19 | PB12 不存在于 LQFP-48 |
-| M4_IN2 = PB13 | PB24 | PB13 不存在于 LQFP-48 |
-| SPI1_SCLK = PA15 | PA17 | PA15 实际不是 SPI1_SCLK |
-| SPI1_PICO = PA17 | PA18 | PA17 实际是 SPI1_SCLK |
-| M3_IN1 = PA18 | PA15 | 为 SPI1_PICO 让出 PA18 |
-| ENC4_A = PB17 | PA31 | PB17 已接板载 Flash CS 且未引出 |
-| SPI1_CS0 = PB20 | ICM42688_CS = PB20 | ICM42688 需要软件控制整个寄存器事务的片选时序 |
-
-## 循迹模块说明
-
-这套完整通信、四 PWM、八编码器方案没有剩余的 12 路独立 GPIO 给原来的 12 路数字循迹模块。当前 `line_sensor.c` 在没有 `LINE_SENSOR` SysConfig 实例时会编译为安全空实现，小车不会因悬空输入启动。
-
-扩展 PCB 若仍需 12 路循迹，建议增加 `74HC165`、MCP23017 等输入扩展器，通过 SPI1 或 I2C0读取，不要再直接占用 12 个 MCU GPIO。
+当前完整方案没有 12 路独立 GPIO 给数字循迹模块。`line_sensor.c` 在没有 `LINE_SENSOR` SysConfig 实例时会编译为安全空实现。若需要 12 路循迹，建议使用 `74HC165` 或 MCP23017 等扩展器，通过 SPI1 或 I2C0 读取。

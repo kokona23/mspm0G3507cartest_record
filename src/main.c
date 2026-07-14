@@ -8,6 +8,7 @@
  */
 
 #include "atk_ble02.h"
+#include "encoder.h"
 #include "tb6612.h"
 #include "ti_msp_dl_config.h"
 #include <stdio.h>
@@ -92,6 +93,7 @@ int main(void)
     char buffer[64];
 
     SYSCFG_DL_init();
+    Encoder_Init();
     TB6612_Init();
 
     UART_SendString("\r\n");
